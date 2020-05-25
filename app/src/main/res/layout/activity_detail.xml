@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:fitsSystemWindows="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorAccent"
+        tools:context=".DetailActivity">
+
+        <ImageView
+            android:id="@+id/img_backdrop"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:adjustViewBounds="true"
+            android:cropToPadding="true"
+            android:fitsSystemWindows="false"
+            android:scaleType="centerCrop"
+            app:layout_constraintDimensionRatio="16:9"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/img_poster"
+            android:layout_width="0dp"
+            android:layout_height="185dp"
+            android:layout_marginStart="8dp"
+            android:contentDescription="@string/poster_image"
+            app:layout_constraintBottom_toBottomOf="@+id/img_backdrop"
+            app:layout_constraintDimensionRatio="w,400:576"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/img_backdrop" />
+
+        <TextView
+            android:id="@+id/tv_releaseDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="25dp"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:textColor="#fff"
+            app:layout_constraintStart_toEndOf="@+id/img_poster"
+            app:layout_constraintTop_toBottomOf="@+id/img_backdrop"
+            tools:text="03/13/2020" />
+
+        <TextView
+            android:id="@+id/tv_userRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:drawableStart="@drawable/ic_star"
+            android:drawablePadding="4dp"
+            android:gravity="center_horizontal|fill"
+            android:textSize="20sp"
+            android:textColor="#fff"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@+id/img_poster"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/img_backdrop"
+            tools:text="7.6" />
+
+        <TextView
+            android:id="@+id/tv_synopsisTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="Overview"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:textSize="25sp"
+            android:textColor="#000"
+            app:layout_constraintTop_toBottomOf="@+id/img_poster" />
+
+        <TextView
+            android:id="@+id/tv_synopsisText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:paddingStart="10dp"
+            android:textColor="#000"
+            android:breakStrategy="balanced"
+            android:textSize="18sp"
+            android:paddingEnd="10dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_synopsisTitle"
+            tools:text="@tools:sample/lorem/random" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/barrier"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            app:barrierDirection="right"
+            app:constraint_referenced_ids="tv_releaseDate,tv_userRating"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
