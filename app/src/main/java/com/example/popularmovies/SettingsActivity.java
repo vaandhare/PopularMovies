@@ -9,7 +9,6 @@ import androidx.core.app.NavUtils;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    // add back button
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -17,7 +17,6 @@ class ApplicationUtils {
             date = format.parse(dateString.replaceAll("Z$", "+0000"));
         } catch (ParseException e) {
             e.printStackTrace();
-            //if we have an err just return the string we were given
             return dateString;
         }
         DateFormat df = DateFormat.getDateInstance(DateFormat.MEDIUM, Resources.getSystem().getConfiguration().locale);

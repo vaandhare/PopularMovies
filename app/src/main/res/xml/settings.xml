@@ -7,5 +7,4 @@
         android:entryValues="@array/preference_sort_by_values"
         android:key="@string/fetch_movie_key"
         android:title="@string/fetch_movie_list_title" />
-
 </PreferenceScreen>

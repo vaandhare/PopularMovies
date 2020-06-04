@@ -24,7 +24,7 @@ public class TrailerAsyncTaskLoader extends AsyncTaskLoader<ArrayList<Trailer>> 
         String result = "";
         URL url = NetworkUtils.buildUrlForMovies(movieId, "videos");
         try {
-            result = NetworkUtils.getResponseFromHttpUrl(url);//This just create a HTTPUrlConnection and return result in strings
+            result = NetworkUtils.getResponseFromHttpUrl(url);
         } catch (IOException e) {
             e.printStackTrace();
         }

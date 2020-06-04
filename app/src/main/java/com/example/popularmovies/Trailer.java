@@ -5,7 +5,7 @@ public class Trailer {
     private String mName;
     private String mVideoKey;
 
-    public Trailer(String name, String videoKey) {
+    Trailer(String name, String videoKey) {
         mName = name;
         mVideoKey = videoKey;
     }

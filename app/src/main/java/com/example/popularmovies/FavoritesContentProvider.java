@@ -13,13 +13,14 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Objects;
+
 public class FavoritesContentProvider extends ContentProvider {
     public static final int FAVORITES = 100;
     public static final int FAVORITES_WITH_ID = 101;
     private static final UriMatcher sUriMatcher = buildUriMatcher();
     FavoritesDbHelper mDBHelper;
 
-    //FAVORITES_WITH_ID has not  implemented yet and is never sent from any where as a uri
     public static UriMatcher buildUriMatcher() {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         uriMatcher.addURI(FavoritesContract.AUTHORITY,
@@ -39,11 +40,7 @@ public class FavoritesContentProvider extends ContentProvider {
 
     @Nullable
     @Override
-    public Cursor query(@NonNull Uri uri,
-                        @Nullable String[] strings,
-                        @Nullable String s,
-                        @Nullable String[] strings1,
-                        @Nullable String s1) {
+    public Cursor query(@NonNull Uri uri, @Nullable String[] strings, @Nullable String s, @Nullable String[] strings1, @Nullable String s1) {
         final SQLiteDatabase db = mDBHelper.getReadableDatabase();
         int match = sUriMatcher.match(uri);
         Cursor returnCursor;
@@ -58,7 +55,7 @@ public class FavoritesContentProvider extends ContentProvider {
         } else {
             throw new UnsupportedOperationException("Unknown uri" + uri);
         }
-        returnCursor.setNotificationUri(getContext().getContentResolver(), uri);
+        returnCursor.setNotificationUri(Objects.requireNonNull(getContext()).getContentResolver(), uri);
         return returnCursor;
 
     }
@@ -87,39 +84,31 @@ public class FavoritesContentProvider extends ContentProvider {
         } else {
             throw new UnsupportedOperationException("Unknown uri" + uri);
         }
-        getContext().getContentResolver().notifyChange(uri, null);
+        Objects.requireNonNull(getContext()).getContentResolver().notifyChange(uri, null);
         return returnUri;
     }
 
     @Override
-    public int delete(@NonNull Uri uri,
-                      @Nullable String selection,
-                      @Nullable String[] selectionArgs) {
+    public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
         int numRowsDeleted;
         //passing "1" as selection will clear the data base
         if (null == selection) selection = "1";
-        switch (sUriMatcher.match(uri)) {
-            case FAVORITES:
-                numRowsDeleted = mDBHelper.getWritableDatabase().delete(
-                        FavoritesContract.FavoritesEntry.TABLE_NAME,
-                        selection,
-                        selectionArgs);
-                break;
-
-            default:
-                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        if (sUriMatcher.match(uri) == FAVORITES) {
+            numRowsDeleted = mDBHelper.getWritableDatabase().delete(
+                    FavoritesContract.FavoritesEntry.TABLE_NAME,
+                    selection,
+                    selectionArgs);
+        } else {
+            throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
         if (numRowsDeleted != 0) {
-            getContext().getContentResolver().notifyChange(uri, null);
+            Objects.requireNonNull(getContext()).getContentResolver().notifyChange(uri, null);
         }
         return numRowsDeleted;
     }
 
     @Override
-    public int update(@NonNull Uri uri,
-                      @Nullable ContentValues contentValues,
-                      @Nullable String s,
-                      @Nullable String[] strings) {
+    public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String s, @Nullable String[] strings) {
         return 0;
     }
 }

@@ -101,7 +101,6 @@ public class MainActivity extends AppCompatActivity implements MovieRecyclerView
         }
     }
 
-    //Inflate Menu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -213,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements MovieRecyclerView
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle state) {
+    protected void onRestoreInstanceState(@NonNull Bundle state) {
         super.onRestoreInstanceState(state);
         listState = state.getParcelable(mRecyclerPositionKey);
         System.out.println(listState);
