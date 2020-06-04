@@ -3,7 +3,8 @@ package com.example.popularmovies;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -36,7 +37,7 @@ public class TrailerRecyclerViewAdapter extends RecyclerView.Adapter<com.example
     public void onBindViewHolder(TrailerRecyclerViewAdapter.TrailerViewHolder holder, int position) {
         Trailer trailer = mDataSource.get(position);
         String name = trailer.getName();
-        holder.mTrailerButton.setText(name);
+        holder.mTrailerName.setText(name);
     }
 
     @Override
@@ -49,12 +50,15 @@ public class TrailerRecyclerViewAdapter extends RecyclerView.Adapter<com.example
     }
 
     class TrailerViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        Button mTrailerButton;
+        ImageButton mTrailerButton;
+        TextView mTrailerName;
 
         TrailerViewHolder(View itemView) {
             super(itemView);
+            mTrailerName = itemView.findViewById(R.id.trailer_title);
             mTrailerButton = itemView.findViewById(R.id.trailer_button);
             mTrailerButton.setOnClickListener(this);
+            mTrailerName.setOnClickListener(this);
         }
 
         @Override

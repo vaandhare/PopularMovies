@@ -9,7 +9,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
@@ -60,11 +60,7 @@ public class DetailedActivity extends AppCompatActivity implements TrailerRecycl
     @BindView(R.id.trailer_recycler_view)
     RecyclerView mTrailerRecyclerView;
     @BindView(R.id.favorite_b)
-    Button mFavoriteButton;
-    @BindString(R.string.add_to_favorites_button_title)
-    String mAddFavoritesTitle;
-    @BindString(R.string.remove_from_favorites_button_title)
-    String mRemoveFavoritesTitle;
+    ImageButton mFavoriteButton;
     @BindString(R.string.movie_detail_Key)
     String mMovieDetailKey;
     @BindString(R.string.movie_id_Key)
@@ -295,12 +291,11 @@ public class DetailedActivity extends AppCompatActivity implements TrailerRecycl
             } finally {
                 if (movieIds.contains(mMovieId)) {
                     mIsFavorite = true;
-                    mFavoriteButton.setText(mRemoveFavoritesTitle);
+                    mFavoriteButton.setBackgroundResource(R.drawable.ic_favorite_black_24dp);
 
                 } else {
                     mIsFavorite = false;
-                    mFavoriteButton.setText(mAddFavoritesTitle);
-
+                    mFavoriteButton.setBackgroundResource(R.drawable.ic_favorite_border_black_24dp);
                 }
             }
         }

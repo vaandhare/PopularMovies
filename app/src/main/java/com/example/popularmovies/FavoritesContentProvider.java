@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
@@ -46,18 +47,16 @@ public class FavoritesContentProvider extends ContentProvider {
         final SQLiteDatabase db = mDBHelper.getReadableDatabase();
         int match = sUriMatcher.match(uri);
         Cursor returnCursor;
-        switch (match) {
-            case FAVORITES:
-                returnCursor = db.query(FavoritesContract.FavoritesEntry.TABLE_NAME,
-                        strings,
-                        s,
-                        strings1,
-                        null,
-                        null,
-                        s1);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unknown uri" + uri);
+        if (match == FAVORITES) {
+            returnCursor = db.query(FavoritesContract.FavoritesEntry.TABLE_NAME,
+                    strings,
+                    s,
+                    strings1,
+                    null,
+                    null,
+                    s1);
+        } else {
+            throw new UnsupportedOperationException("Unknown uri" + uri);
         }
         returnCursor.setNotificationUri(getContext().getContentResolver(), uri);
         return returnCursor;
@@ -76,19 +75,17 @@ public class FavoritesContentProvider extends ContentProvider {
         final SQLiteDatabase db = mDBHelper.getWritableDatabase();
         int match = sUriMatcher.match(uri);
         Uri returnUri;
-        switch (match) {
-            case FAVORITES:
-                long id = db.insert(FavoritesContract.FavoritesEntry.TABLE_NAME,
-                        null, contentValues);
-                if (id > 0) {
-                    returnUri = ContentUris.withAppendedId(FavoritesContract.CONTENT_URI, id);
+        if (match == FAVORITES) {
+            long id = db.insert(FavoritesContract.FavoritesEntry.TABLE_NAME,
+                    null, contentValues);
+            if (id > 0) {
+                returnUri = ContentUris.withAppendedId(FavoritesContract.CONTENT_URI, id);
 
-                } else {
-                    throw new android.database.SQLException("Failed to insert" + uri);
-                }
-                break;
-            default:
-                throw new UnsupportedOperationException("Unknown uri" + uri);
+            } else {
+                throw new SQLException("Failed to insert" + uri);
+            }
+        } else {
+            throw new UnsupportedOperationException("Unknown uri" + uri);
         }
         getContext().getContentResolver().notifyChange(uri, null);
         return returnUri;

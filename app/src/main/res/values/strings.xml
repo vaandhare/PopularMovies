@@ -26,9 +26,6 @@
     <string name="fetch_favorites" translatable="false">favorites</string>
     <string name="fetch_movie_key" translatable="false">sortKey</string>
     <string name="fetch_movie_list_title">Fetch Movies By</string>
-    <!-- Favorites Button Title-->
-    <string name="remove_from_favorites_button_title">Remove from Favorites</string>
-    <string name="add_to_favorites_button_title">Add To Favorites</string>
     <!-- Error message Strings-->
     <string name="network_error">Could not connect to movies DB. Please check you network connection and try again</string>
     <!-- Share trailer Strings-->
@@ -39,5 +36,8 @@
     <!-- keys for save state-->
     <string name="scroll_position_key" translatable="false">"scrollPosition"</string>
     <string name="recycler_position_key" translatable="false">"recyclerPosition"</string>
+    <string name="favorite_button">Favorite Button</string>
+    <string name="trailer_play_button">Trailer Play Button</string>
+    <string name="name_of_trailer">Name of trailer</string>
 
 </resources>
