@@ -22,7 +22,8 @@ import java.util.Scanner;
 
 class NetworkUtils {
 
-    private static final String API_KEY = "ab46c2f2722af43d6069d8a1e9b381cd";
+    //API KEY
+    private static final String API_KEY = "";
     private static final String SCHEME = "https";
     private static final String AUTHORITY = "api.themoviedb.org";
     private static final String PATH_1 = "3";
