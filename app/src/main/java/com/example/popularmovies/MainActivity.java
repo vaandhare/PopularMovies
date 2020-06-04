@@ -1,172 +1,223 @@
 package com.example.popularmovies;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
-import android.net.ConnectivityManager;
-import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
-import android.os.AsyncTask;
-import android.os.Build;
+import android.content.Loader;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
-import java.io.IOException;
-import java.net.URL;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
+import java.util.Objects;
 
-public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterClickListener {
-    public static final String MOVIE_OBJECT = "movie_object";
-    private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String POPULAR = "popular";
-    private static final String TOP_RATED = "top_rated";
-    public ArrayList<Movie> moviesArrayList;
-    private RecyclerView recyclerView;
-    ImageView errorImageView;
-    TextView errorTextView;
-    private static MovieAdapter movieAdapter;
+import butterknife.BindString;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
-    private static boolean isNetworkConnected(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (connectivityManager != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork());
-                return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR));
-            } else {
-                NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-                return activeNetwork != null && activeNetwork.isConnected();
-            }
+public class MainActivity extends AppCompatActivity implements MovieRecyclerViewAdapter.ListItemClickListener,
+        SharedPreferences.OnSharedPreferenceChangeListener, LoaderManager.LoaderCallbacks<Cursor> {
+
+    private static final int MOVIE_LOADER = 10;
+    @BindView(R.id.progressBar)
+    ProgressBar mProgressBar;
+    @BindView(R.id.no_network_textView)
+    TextView mNoNetworkTextView;
+    @BindView(R.id.movie_recycler_view)
+    RecyclerView mMovieRecyclerView;
+    @BindString(R.string.movie_detail_Key)
+    String mMovieDetailKey;
+    @BindString(R.string.recycler_position_key)
+    String mRecyclerPositionKey;
+    GridLayoutManager mLayoutManager;
+    Parcelable listState;
+    private ArrayList<Movie> mMovies;
+    private MovieRecyclerViewAdapter mMovieRecyclerViewAdapter;
+    public android.app.LoaderManager.LoaderCallbacks<ArrayList<Movie>> movieLoaderListener
+            = new android.app.LoaderManager.LoaderCallbacks<ArrayList<Movie>>() {
+        @Override
+        public Loader<ArrayList<Movie>> onCreateLoader(int i, Bundle bundle) {
+            mProgressBar.setVisibility(View.VISIBLE);
+            mNoNetworkTextView.setVisibility(View.GONE);
+            return new MoviesAsyncTaskLoader(MainActivity.this);
         }
-        return false;
-    }
+
+        @Override
+        public void onLoadFinished(Loader<ArrayList<Movie>> loader, ArrayList<Movie> movies) {
+            if (movies != null) {
+                mMovies = movies;
+                mMovieRecyclerViewAdapter.setDataSource(mMovies);
+                if (listState != null) {
+                    mLayoutManager.onRestoreInstanceState(listState);
+                }
+            } else {
+                mNoNetworkTextView.setVisibility(View.VISIBLE);
+            }
+            mProgressBar.setVisibility(View.GONE);
+
+        }
+
+        @Override
+        public void onLoaderReset(Loader<ArrayList<Movie>> loader) {
+            mMovies = null;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        errorImageView = findViewById(R.id.img_networkError);
-        errorTextView = findViewById(R.id.tv_noInternet);
-        recyclerView = findViewById(R.id.recyclerView);
-        Context context = this;
-
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-            setGridLayoutManager(context, 2);
+        ButterKnife.bind(this);
+        //register for pref changes so we can update the movie grid
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+        //Set up the recyclerView that will show the movies
+        mMovies = new ArrayList<>();
+        mLayoutManager = new GridLayoutManager(this, 3);
+        mMovieRecyclerView.setLayoutManager(mLayoutManager);
+        mMovieRecyclerViewAdapter = new MovieRecyclerViewAdapter(mMovies, this, this);
+        mMovieRecyclerView.setAdapter(mMovieRecyclerViewAdapter);
+        String fetchMoviesString = sharedPreferences.getString(this.getResources().getString(R.string.fetch_movie_key), this.getResources().getString(R.string.fetch_by_most_popular));
+        String favorites = (this.getResources().getString(R.string.fetch_favorites));
+        if (fetchMoviesString.equals(favorites)) {
+            mMovies = new ArrayList<>();
+            getSupportLoaderManager().initLoader(1, null, this);
         } else {
-            setGridLayoutManager(context, 4);
-        }
-
-        recyclerView.setHasFixedSize(true);
-
-        movieAdapter = new MovieAdapter(context, moviesArrayList, (MovieAdapter.MovieAdapterClickListener) context);
-        recyclerView.setAdapter(movieAdapter);
-
-        checkAndCall(context, POPULAR);
-    }
-
-    private void setGridLayoutManager(Context context, int spanCount) {
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(context, spanCount);
-        recyclerView.setLayoutManager(gridLayoutManager);
-    }
-
-    private void checkAndCall(Context context, String sortByParameter) {
-        if (isNetworkConnected(context)) {
-            makeMoviesQuery(sortByParameter);
-        } else {
-            showErrorImageView();
+            fetchJsonForMovies();
         }
     }
 
-    private void makeMoviesQuery(String sortByParameter) {
-        showRecyclerView();
-        new MoviesAsyncTasks().execute(sortByParameter);
-    }
-
-    private void showRecyclerView() {
-        errorImageView.setVisibility(View.GONE);
-        errorTextView.setVisibility(View.GONE);
-        recyclerView.setVisibility(View.VISIBLE);
-    }
-
-    private void showErrorImageView() {
-        errorImageView.setVisibility(View.VISIBLE);
-        errorTextView.setVisibility(View.VISIBLE);
-        recyclerView.setVisibility(View.GONE);
-    }
-
+    //Inflate Menu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu, menu);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.settings, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int itemId = item.getItemId();
-        switch (itemId) {
-            case R.id.popularSort:
-                checkAndCall(this, POPULAR);
-                setTitle("Popular Movies");
-                return true;
-            case R.id.TopRatedSort:
-                checkAndCall(this, TOP_RATED);
-                setTitle("Top Rated Movies");
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_setting) {
+            Intent startSettingsActivity = new Intent(this, SettingsActivity.class);
+            startActivity(startSettingsActivity);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    //AsyncTaskLoader for fetch of  movies
+    private void fetchJsonForMovies() {
+        android.app.LoaderManager loaderManager = getLoaderManager();
+        Loader<String> loader = loaderManager.getLoader(MOVIE_LOADER);
+        if (loader == null) {
+            // If we don't have a loader lets create one
+            loaderManager.initLoader(MOVIE_LOADER, null, movieLoaderListener);
+        } else {
+            // other wise lets restart the loader we have
+            loaderManager.restartLoader(MOVIE_LOADER, null, movieLoaderListener);
+        }
+    }
+
+    //A movie item is tapped
+    @Override
+    public void onMovieItemClick(Movie movie) {
+        Intent detailIntent = new Intent(this, DetailedActivity.class);
+        detailIntent.putExtra(mMovieDetailKey, movie);
+        startActivity(detailIntent);
+    }
+
+    //if the prefs have changed refetch movies
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
+        if (s.equals(getResources().getString(R.string.fetch_movie_key))) {
+            if (s.equals(this.getResources().getString(R.string.fetch_favorites))) {
+                mMovies = new ArrayList<>();
+                mMovieRecyclerViewAdapter.setDataSource(mMovies);
+            } else {
+                fetchJsonForMovies();
+            }
         }
     }
 
     @Override
-    public void onListItemClick(Movie currentMovie) {
-        Intent MainToDetailIntent = new Intent(MainActivity.this, DetailedActivity.class);
-        MainToDetailIntent.putExtra(MOVIE_OBJECT, currentMovie);
-        startActivity(MainToDetailIntent);
+    protected void onDestroy() {
+        super.onDestroy();
+        //clean up unregister pref listener.
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .unregisterOnSharedPreferenceChangeListener(this);
     }
 
+    // Using a cursor loader to query on background thread
+    @NonNull
+    @Override
+    public androidx.loader.content.Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Uri NAME_URI = FavoritesContract.CONTENT_URI;
+        return new CursorLoader(this, NAME_URI, null,
+                null, null, null);
+    }
 
-    private static class MoviesAsyncTasks extends AsyncTask<String, Void, ArrayList<Movie>> {
-        @Override
-        protected ArrayList<Movie> doInBackground(String... strings) {
-            if (strings.length == 0) {
-                return null;
-            }
-            String sortByParameter = strings[0];
-            URL moviesQueryUrl = NetworkUtils.buildUrl(sortByParameter);
-
-            String JsonResponse;
+    @Override
+    public void onLoadFinished(@NonNull androidx.loader.content.Loader<Cursor> loader, Cursor cursor) {
+        if (cursor != null) {
+            cursor.moveToPosition(-1);
             try {
-                switch (sortByParameter) {
-                    case (POPULAR):
-                        moviesQueryUrl = NetworkUtils.buildUrl(POPULAR);
-                        break;
-                    case (TOP_RATED):
-                        moviesQueryUrl = NetworkUtils.buildUrl(TOP_RATED);
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("Unknown URL " + moviesQueryUrl);
+                while (cursor.moveToNext()) {
+                    String title = cursor.getString(cursor.getColumnIndex
+                            (FavoritesContract.FavoritesEntry.COLUMN_TITLE));
+                    String movieId = cursor.getString(cursor.getColumnIndex
+                            (FavoritesContract.FavoritesEntry.COLUMN_MOVIE_ID));
+                    String plot = cursor.getString(cursor.getColumnIndex
+                            (FavoritesContract.FavoritesEntry.COLUMN_PLOT));
+                    String date = cursor.getString(cursor.getColumnIndex
+                            (FavoritesContract.FavoritesEntry.COLUMN_RELEASE_DATE));
+                    String vote = cursor.getString(cursor.getColumnIndex
+                            (FavoritesContract.FavoritesEntry.COLUMN_AVERAGE_VOTE));
+                    String path = cursor.getString(cursor.getColumnIndex
+                            (FavoritesContract.FavoritesEntry.COLUMN_POSTER_PATH));
+                    Movie movie = new Movie(movieId, title, date, vote, plot, path);
+                    mMovies.add(movie);
                 }
-                JsonResponse = NetworkUtils.makeHttpRequest(moviesQueryUrl);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-            return MoviesJSONUtils.parseJson(JsonResponse);
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<Movie> movies) {
-            super.onPostExecute(movies);
-            if (movies != null) {
-                movieAdapter.setMovieData(movies);
+            } finally {
+                mMovieRecyclerViewAdapter.setDataSource(mMovies);
+                mLayoutManager.onRestoreInstanceState(listState);
             }
         }
     }
+
+    @Override
+    public void onLoaderReset(@NonNull androidx.loader.content.Loader loader) {
+
+    }
+
+    // save recycler scroll position on rotation
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(mRecyclerPositionKey,
+                Objects.requireNonNull(mMovieRecyclerView.getLayoutManager()).onSaveInstanceState());
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle state) {
+        super.onRestoreInstanceState(state);
+        listState = state.getParcelable(mRecyclerPositionKey);
+        System.out.println(listState);
+        Objects.requireNonNull(mMovieRecyclerView.getLayoutManager()).onRestoreInstanceState(listState);
+    }
+
 }

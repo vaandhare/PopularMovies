@@ -4,9 +4,10 @@
     android:layout_height="wrap_content">
 
     <ImageView
-        android:id="@+id/moviePoster"
-        android:layout_width="200dp"
-        android:layout_height="250dp"
-        android:contentDescription="@string/movie_poster"/>
+        android:id="@+id/poster_iv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/movie_content_description" />
 
 </FrameLayout>

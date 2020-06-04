@@ -4,33 +4,29 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class Movie implements Parcelable {
+    private String mId;
+    private String mMovieTitle;
+    private String mReleaseDate;
+    private String mAverageVote;
+    private String mPlot;
+    private String mPosterPath;
 
-    private int movieId;
-    private String originalTitle;
-    private String posterPath;
-    private String backdropPath;
-    private String overview;
-    private double voteAverage;
-    private String releaseDate;
-
-    Movie(int movieId, String originalTitle, String posterPath, String backdropPath, String overview, double voteAverage, String releaseDate) {
-        this.movieId = movieId;
-        this.originalTitle = originalTitle;
-        this.posterPath = posterPath;
-        this.backdropPath = backdropPath;
-        this.overview = overview;
-        this.voteAverage = voteAverage;
-        this.releaseDate = releaseDate;
+    Movie(String id, String movieTitle, String releaseDate, String averageVote, String plot, String posterPath) {
+        this.mId = id;
+        this.mMovieTitle = movieTitle;
+        this.mReleaseDate = releaseDate;
+        this.mAverageVote = averageVote;
+        this.mPlot = plot;
+        this.mPosterPath = posterPath;
     }
 
     private Movie(Parcel in) {
-        movieId = in.readInt();
-        originalTitle = in.readString();
-        posterPath = in.readString();
-        backdropPath = in.readString();
-        overview = in.readString();
-        voteAverage = in.readDouble();
-        releaseDate = in.readString();
+        mId = in.readString();
+        mMovieTitle = in.readString();
+        mReleaseDate = in.readString();
+        mAverageVote = in.readString();
+        mPlot = in.readString();
+        mPosterPath = in.readString();
     }
 
     public static final Creator<Movie> CREATOR = new Creator<Movie>() {
@@ -45,75 +41,46 @@ public class Movie implements Parcelable {
         }
     };
 
+    String getMovieId() {
+        return mId;
+    }
+
+    String getMovieTitle() {
+        return mMovieTitle;
+    }
+
+    String getReleaseDate() {
+        return mReleaseDate;
+    }
+
+    String getAverageVote() {
+        return mAverageVote;
+    }
+
+    String getPlot() {
+        return mPlot;
+    }
+
+    String getPosterPath() {
+        return mPosterPath;
+    }
+
+    public void setId(String mId) {
+        this.mId = mId;
+    }
+
     @Override
     public int describeContents() {
         return 0;
     }
 
     @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(movieId);
-        dest.writeString(originalTitle);
-        dest.writeString(posterPath);
-        dest.writeString(backdropPath);
-        dest.writeString(overview);
-        dest.writeDouble(voteAverage);
-        dest.writeString(releaseDate);
-    }
-
-    int getMovieId() {
-        return movieId;
-    }
-
-    public void setMovieId(int movieId) {
-        this.movieId = movieId;
-    }
-
-    String getOriginalTitle() {
-        return originalTitle;
-    }
-
-    public void setOriginalTitle(String originalTitle) {
-        this.originalTitle = originalTitle;
-    }
-
-    String getPosterPath() {
-        return posterPath;
-    }
-
-    public void setPosterPath(String posterPath) {
-        this.posterPath = posterPath;
-    }
-
-    String getBackdropPath() {
-        return backdropPath;
-    }
-
-    public void setBackdropPath(String backdropPath) {
-        this.backdropPath = backdropPath;
-    }
-
-    String getOverview() {
-        return overview;
-    }
-
-    public void setOverview(String overview) {
-        this.overview = overview;
-    }
-
-    double getVoteAverage() {
-        return voteAverage;
-    }
-
-    public void setVoteAverage(double voteAverage) {
-        this.voteAverage = voteAverage;
-    }
-
-    String getReleaseDate() {
-        return releaseDate;
-    }
-
-    public void setReleaseDate(String releaseDate) {
-        this.releaseDate = releaseDate;
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(mId);
+        parcel.writeString(mMovieTitle);
+        parcel.writeString(mReleaseDate);
+        parcel.writeString(mAverageVote);
+        parcel.writeString(mPlot);
+        parcel.writeString(mPosterPath);
     }
 }
