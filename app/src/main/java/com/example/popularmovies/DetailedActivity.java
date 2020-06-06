@@ -1,10 +1,7 @@
 package com.example.popularmovies;
 
-import android.content.ContentValues;
 import android.content.Intent;
 import android.content.Loader;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,14 +10,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.widget.NestedScrollView;
-import androidx.loader.app.LoaderManager;
-import androidx.loader.content.CursorLoader;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,8 +25,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class DetailedActivity extends AppCompatActivity implements TrailerRecyclerViewAdapter.ButtonTapped,
-        LoaderManager.LoaderCallbacks<Cursor> {
+public class DetailedActivity extends AppCompatActivity implements TrailerRecyclerViewAdapter.ButtonTapped {
 
     private static final int REVIEW_LOADER = 100;
     private static final int TRAILER_LOADER = 1000;
@@ -84,11 +77,14 @@ public class DetailedActivity extends AppCompatActivity implements TrailerRecycl
     private String mMovieReaseDate;
     private String mMovieAverageVote;
     private String mMoviePosterPath;
-    private boolean mIsFavorite;
+    private boolean mIsFavorite = false;
     private boolean mHasTrailers;
     private int[] mScrollPosition;
     private boolean mReviewsLoaded;
     private boolean mTrailersLoaded;
+    private MovieDatabase mDb;
+
+
     public android.app.LoaderManager.LoaderCallbacks<ArrayList<Review>> reviewLoaderListener
             = new android.app.LoaderManager.LoaderCallbacks<ArrayList<Review>>() {
 
@@ -146,7 +142,6 @@ public class DetailedActivity extends AppCompatActivity implements TrailerRecycl
         public void onLoaderReset(Loader<ArrayList<Trailer>> loader) {
         }
     };
-    private Toast mFavoritesToast;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -161,12 +156,24 @@ public class DetailedActivity extends AppCompatActivity implements TrailerRecycl
             mMovieReaseDate = movie.getReleaseDate();
             mMovieAverageVote = movie.getAverageVote();
             mMoviePosterPath = movie.getPosterPath();
-            getSupportLoaderManager().initLoader(1, null, this);
             setupTheRecyclerViews();
             updateTheUI();
             fetchJsonForReviews(movie.getMovieId());
             fetchJsonForTrailers(movie.getMovieId());
+
+            mDb = MovieDatabase.getInstance(getApplicationContext());
+
         }
+
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                final FavoriteMovie fmov = mDb.movieDao().loadMovieById(Integer.parseInt(mMovieId));
+                setFavorite(fmov != null);
+            }
+        });
+
+
     }
 
     private void setupTheRecyclerViews() {
@@ -235,77 +242,45 @@ public class DetailedActivity extends AppCompatActivity implements TrailerRecycl
 
     @OnClick(R.id.favorite_b)
     public void onClick(View view) {
-        if (mIsFavorite) {
-            removeFromFavorites();
-        } else {
-            addToFavorites();
-        }
-        getSupportLoaderManager().initLoader(1, null, this);
-    }
-
-    private void removeFromFavorites() {
-        getContentResolver().delete(FavoritesContract.CONTENT_URI,
-                FavoritesContract.FavoritesEntry.COLUMN_MOVIE_ID + "=?", new String[]{mMovieId});
-        if (mFavoritesToast != null) {
-            mFavoritesToast.cancel();
-        }
-        mFavoritesToast = Toast.makeText(this, "Movie removed from favorites", Toast.LENGTH_LONG);
-        mFavoritesToast.show();
-    }
-
-    private void addToFavorites() {
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_MOVIE_ID, mMovieId);
-        contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_TITLE, mMovieTitle);
-        contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_PLOT, mMoviePlot);
-        contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_POSTER_PATH, mMoviePosterPath);
-        contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_RELEASE_DATE, mMovieReaseDate);
-        contentValues.put(FavoritesContract.FavoritesEntry.COLUMN_AVERAGE_VOTE, mMovieAverageVote);
-        getContentResolver().insert(FavoritesContract.CONTENT_URI, contentValues);
-        if (mFavoritesToast != null) {
-            mFavoritesToast.cancel();
-        }
-        mFavoritesToast = Toast.makeText(this, "Movie added to favorites", Toast.LENGTH_LONG);
-        mFavoritesToast.show();
-    }
-
-    @NonNull
-    @Override
-    public androidx.loader.content.Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Uri NAME_URI = FavoritesContract.CONTENT_URI;
-        return new CursorLoader(this, NAME_URI, null,
-                null, null, null);
-    }
-
-    @Override
-    public void onLoadFinished(@NonNull androidx.loader.content.Loader<Cursor> loader, Cursor cursor) {
-        ArrayList<String> movieIds = new ArrayList<>();
-        if (cursor != null) {
-            cursor.moveToPosition(-1);
-            try {
-                while (cursor.moveToNext()) {
-                    String movieId = cursor.getString(cursor.getColumnIndex(FavoritesContract.FavoritesEntry.COLUMN_MOVIE_ID));
-
-                    movieIds.add(movieId);
-                }
-            } finally {
-                if (movieIds.contains(mMovieId)) {
-                    mIsFavorite = true;
-                    mFavoriteButton.setBackgroundResource(R.drawable.ic_favorite_black_24dp);
-
+        final FavoriteMovie mov = new FavoriteMovie(
+                Integer.parseInt(mMovieId),
+                mMovieTitle,
+                mMoviePlot,
+                mMovieReaseDate,
+                mMovieAverageVote,
+                mMoviePosterPath
+        );
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                if (mIsFavorite) {
+                    // delete item
+                    mDb.movieDao().deleteMovie(mov);
                 } else {
-                    mIsFavorite = false;
-                    mFavoriteButton.setBackgroundResource(R.drawable.ic_favorite_border_black_24dp);
+                    // insert item
+                    mDb.movieDao().insertMovie(mov);
                 }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setFavorite(!mIsFavorite);
+                    }
+                });
             }
+
+        });
+
+    }
+
+    private void setFavorite(Boolean fav) {
+        if (fav) {
+            mIsFavorite = true;
+            mFavoriteButton.setImageResource(R.drawable.ic_favorite_black_24dp);
+        } else {
+            mIsFavorite = false;
+            mFavoriteButton.setImageResource(R.drawable.ic_favorite_border_black_24dp);
         }
     }
-
-    @Override
-    public void onLoaderReset(@NonNull androidx.loader.content.Loader<Cursor> loader) {
-
-    }
-
     //Sharing
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
